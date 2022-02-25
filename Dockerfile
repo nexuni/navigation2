@@ -47,20 +47,24 @@ RUN apt-get update && apt-get install -q -y \
 ARG UNDERLAY_WS
 WORKDIR $UNDERLAY_WS
 COPY --from=cacher /tmp/$UNDERLAY_WS ./
-RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
+RUN . /opt/ros/foxy/install/setup.sh && \
     apt-get update && rosdep install -q -y \
       --from-paths src \
       --skip-keys " \
-        slam_toolbox \
+        slam_toolbox libopencv-dev\
         " \
       --ignore-src \
     && rm -rf /var/lib/apt/lists/*
+
+RUN bash -c "pip3 install colcon-mixin && \
+colcon mixin add default https://raw.githubusercontent.com/colcon/colcon-mixin-repository/master/index.yaml && \
+colcon mixin update default"
 
 # build underlay source
 COPY --from=cacher $UNDERLAY_WS ./
 ARG UNDERLAY_MIXINS="release ccache"
 ARG FAIL_ON_BUILD_FAILURE=True
-RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
+RUN . /opt/ros/foxy/install/setup.sh && \
     colcon build \
       --symlink-install \
       --mixin $UNDERLAY_MIXINS \
@@ -79,7 +83,7 @@ RUN . $UNDERLAY_WS/install/setup.sh && \
       --from-paths src \
         $UNDERLAY_WS/src \
       --skip-keys " \
-        slam_toolbox \
+        slam_toolbox libopencv-dev\
         "\
       --ignore-src \
     && rm -rf /var/lib/apt/lists/*
