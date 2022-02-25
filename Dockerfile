@@ -45,9 +45,9 @@ RUN apt-get update && \
       ccache \
       lcov \
       python3-pip \
-      ros-$ROS_DISTRO-rmw-fastrtps-cpp \
-      ros-$ROS_DISTRO-rmw-connextdds \
-      ros-$ROS_DISTRO-rmw-cyclonedds-cpp \
+      # ros-$ROS_DISTRO-rmw-fastrtps-cpp \
+      # ros-$ROS_DISTRO-rmw-connextdds \
+      # ros-$ROS_DISTRO-rmw-cyclonedds-cpp \
     && pip3 install \
       git+https://github.com/ruffsl/colcon-cache.git@13c424c3a455ae04d1a4176a54c49a9d20c9dca0 \
     && rosdep update \
@@ -57,7 +57,7 @@ RUN apt-get update && \
 ARG UNDERLAY_WS
 WORKDIR $UNDERLAY_WS
 COPY --from=cacher /tmp/$UNDERLAY_WS ./
-RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
+RUN . /opt/ros/$ROS_DISTRO/install/setup.sh && \
     apt-get update && rosdep install -q -y \
       --from-paths src \
       --skip-keys " \
@@ -68,13 +68,14 @@ RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
 
 RUN bash -c "pip3 install colcon-mixin && \
 colcon mixin add default https://raw.githubusercontent.com/colcon/colcon-mixin-repository/master/index.yaml && \
-colcon mixin update default"
+colcon mixin update default && \
+pip3 install pyyaml --upgrade"
 
 # build underlay source
 COPY --from=cacher $UNDERLAY_WS ./
 ARG UNDERLAY_MIXINS="release ccache"
 ARG FAIL_ON_BUILD_FAILURE=True
-RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
+RUN . /opt/ros/$ROS_DISTRO/install/setup.sh && \
     colcon cache lock && \
     colcon build \
       --symlink-install \
